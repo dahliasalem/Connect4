@@ -68,10 +68,10 @@ public class minimax_zugzwang extends AIModule
 		for(int i = 0; i < width; i++) {
 			h = heights[i];
 			if(h != height && h != state.getHeightAt(i)) {
-				System.out.println("Enemy placed at " + i);
-				enemyMove = i;
-				heights[i]++;
 				h = heights[i];
+				heights[i]++;
+				System.out.println("Enemy placed at " + i + "," + h);
+				enemyMove = i;
 				break;
 			}
 		}
@@ -168,7 +168,7 @@ public class minimax_zugzwang extends AIModule
 			// END grave
 		}
 		// BEGIN vertical
-		if(y > 2 && y < 5) {
+		if(y > 1 && y < 5) {
 			if(state.getAt(x, y-1) == player && state.getAt(x, y-2) == player) {
 				if(player == myID) {
 					myThreats[x][y+1] = myID;
@@ -179,29 +179,6 @@ public class minimax_zugzwang extends AIModule
 			}
 		}
 		// END vertical
-		/*
-			if(y > 2 && y < 6) { //check for threats above
-				// has a vertical threat been created?
-				if(state.getAt(x, y-1) == player && state.getAt(x, y-2) == player) {
-					eThreats[x][y+1] = player;
-				}
-				// has a diagonal threat been created to the left?
-				if(x > 0 && x < 5 
-					&& state.getAt(x+1, y-1) == player 
-					&& state.getAt(x+2, y-2) == player 
-					&& state.getAt(x-1, y+1) == 0) {
-					eThreats[x-1][y+1] = player;
-				}
-				// has a diagonal threat been created to the right?
-				if(x > 1 && x < 6
-					&& state.getAt(x-1, y-1) == player
-					&& state.getAt(x-2, y-2) == player
-					&& state.getAt(x+1, y+1) == 0) {
-					eThreats[x+1][y+1] = player;
-				}
-			}
-			if(y > 0 && y <)
-		*/
 	}
 
 	private boolean isLegal(int x, int y) {
