@@ -23,12 +23,16 @@ public class minimax_zugzwang extends AIModule
 	private int depth;
 	private int width;
 	private int height;
+	private int lastX;
+	private int lastY;
 	private int[][] myThreats;
 	private int[][] eThreats;
 	private boolean[] full;
 	private int[] heights;
 	private static final int BIGWIN = 100000;
+	private static final int ILLEGAL = -100000;
 	private static final int NOLOSS = 1000;
+	private static final int SUICIDE = -1000;
 	private static final int NEWTHREAT = 100;
 
 	public minimax_zugzwang() {
@@ -36,6 +40,7 @@ public class minimax_zugzwang extends AIModule
 		depth = 0;
 		width = 7;
 		height = 6;
+		lastX = lastY = -1;
 		myThreats = new int[width][height];
 		eThreats = new int[width][height];
 		heights = new int[width];
@@ -78,13 +83,47 @@ public class minimax_zugzwang extends AIModule
 		if(enemyMove != -1) {
 			myThreats[enemyMove][h] = 0;
 		}
+		findThreats(eID, enemyMove, h, state);
+		findThreats(myID, lastX, lastY, state);
 		while(!terminate) {
-			findThreats(eID, enemyMove, h, state);
+			evaluate(state);
 		}
 		printThreats(eThreats);
-		eThreats[chosenMove][state.getHeightAt(chosenMove)] = 0;
+		lastX = chosenMove;
+		lastY = heights[chosenMove];
+		eThreats[lastX][lastY] = 0;
 		heights[chosenMove]++;
 		depth = 0;
+	}
+
+	private void evaluate(final GameStateModule state) {
+		int h = -1;
+		moves = new int[7];
+		for(int i = 0; i < 7; i++) {
+			h = heights[i];
+			if(h != 6) {
+				if(myThreats[i][h] == myID) {
+					moves[i] += BIGWIN;
+				}
+				else{
+					if(eThreats[i][h] == eID) {
+						moves[i] += NOLOSS;
+					}
+					if(h != 5 && eThreats[i][h+1] == eID) {
+						moves[i] += SUICIDE;
+					}
+					moves[i] += 8 - Math.abs(i - 3);
+				}
+			}
+			else {
+				moves[i] += ILLEGAL;
+			}
+		}
+		for(int i = 0; i < 7; i++) {
+			if(moves[i] > moves[chosenMove]) {
+				chosenMove = i;
+			}
+		}
 	}
 
 	private void findThreats(final int player, final int x, final int y, final GameStateModule state) {
@@ -182,7 +221,7 @@ public class minimax_zugzwang extends AIModule
 	}
 
 	private boolean isLegal(int x, int y) {
-		return x >= 0 && x <= 6 && y >= 0 && y <= 5;
+		return y >= 0 && y <= 5 && x >= 0 && x <= 6;
 	}
 
 	private void printThreats(final int[][] a) {
