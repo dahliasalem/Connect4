@@ -18,6 +18,7 @@ public class minimax_zugzwang extends AIModule
 	private final Random r = new Random(System.currentTimeMillis());
 	private int[] moves;
 
+	private boolean alternate;
 	private int myID;
 	private int eID;
 	private int depth;
@@ -33,7 +34,10 @@ public class minimax_zugzwang extends AIModule
 	private static final int ILLEGAL = -100000;
 	private static final int NOLOSS = 1000;
 	private static final int SUICIDE = -1000;
-	private static final int NEWTHREAT = 100;
+	private static final int HORIZON = 100;
+	private static final int FLANKER = 200;
+	private static final int EHORIZON = -9;
+	private static final int ROWZUG = 5;
 
 	public minimax_zugzwang() {
 		myID = eID = 0;
@@ -81,14 +85,21 @@ public class minimax_zugzwang extends AIModule
 			}
 		}
 		if(enemyMove != -1) {
+			if(myThreats[enemyMove][h] != 0)
 			myThreats[enemyMove][h] = 0;
 		}
 		findThreats(eID, enemyMove, h, state);
 		findThreats(myID, lastX, lastY, state);
 		while(!terminate) {
 			evaluate(state);
+			/*
+			for(int i = 0; i < 7; i++) {
+				System.out.print("[" + moves[i] + "]");
+			}
+			System.out.print("\n");
+			// */
 		}
-		printThreats(eThreats);
+		//printThreats(eThreats);
 		lastX = chosenMove;
 		lastY = heights[chosenMove];
 		eThreats[lastX][lastY] = 0;
@@ -103,16 +114,38 @@ public class minimax_zugzwang extends AIModule
 			h = heights[i];
 			if(h != 6) {
 				if(myThreats[i][h] == myID) {
-					moves[i] += BIGWIN;
+					moves[i] += BIGWIN; // if we can win no further calcs are necessary
 				}
 				else{
 					if(eThreats[i][h] == eID) {
-						moves[i] += NOLOSS;
+						moves[i] += NOLOSS; // if our opponent can win we have no choice but to block
 					}
-					if(h != 5 && eThreats[i][h+1] == eID) {
-						moves[i] += SUICIDE;
+					else {
+						if(h != 5 && eThreats[i][h+1] == eID) {
+							moves[i] += SUICIDE; // don't place the piece that enables your opponent to win
+						}
+						if((i == 1 || i == 5) && h == 0 && state.getAt(3, 2) == eID) {
+							int v = (3-i)/2;
+							if(state.getAt(i+v, 1) == eID) {
+								moves[i] += FLANKER;
+							}
+						}
+						/*for(int a = 1; a < 6-h; a++) {
+							if(myThreats[i][h+a] == myID) {
+								moves[i] += a == 1 ? -ROWZUG : ((a+1)%2)*ROWZUG; // don't waste a zug row
+								break;
+							}
+							if(eThreats[i][h+a] == eID) {
+								moves[i] += a == 1 ? -ROWZUG : ((a+1)%2)*ROWZUG;
+								break;
+							}
+						}
+						if(h < 5) {
+							moves[i] -= checkHorizontal(i,h+1, state) == 0 ? 0 : HORIZON*(5-h);
+						}// */
+						moves[i] += checkHorizontal(i,h,state) == 0 ? 0 : HORIZON*(6-h);
+						moves[i] += 4 - Math.abs(i - 3) /*+ (6-h)*/; // this gives a very small bias toward the center bottom
 					}
-					moves[i] += 8 - Math.abs(i - 3);
 				}
 			}
 			else {
@@ -120,10 +153,47 @@ public class minimax_zugzwang extends AIModule
 			}
 		}
 		for(int i = 0; i < 7; i++) {
-			if(moves[i] > moves[chosenMove]) {
-				chosenMove = i;
+			if(alternate) {
+				if(moves[i] > moves[chosenMove]) {
+					chosenMove = i;
+				}
+				alternate = false;
+			}
+			else {
+				if(moves[i] >= moves[chosenMove]) {
+					chosenMove = i;
+				}
+				alternate = true;
 			}
 		}
+	}
+
+	private int checkHorizontal(final int x, final int y, final GameStateModule state) {
+		int count1 = 0;
+		int count2 = 0;
+		//check for cases of 2 matched coins and no blocking coin in every horizontal 4 that x,y could be a part
+		for(int i = x - 3; i <= x; i++) {
+			count1 = 0;
+			count2 = 0;
+			if(isLegal(i,y) && isLegal(i+3,y)) {
+				for(int d = 0; d < 4; d++) {
+					int id = state.getAt(i+d, y);
+					switch(id) {
+						case 1: count1++;
+								break;
+						case 2: count2++;
+								break;
+					}
+				}
+				if(count1 > 1 && count2 == 0) {
+					return 1;
+				}
+				if(count1 == 0 && count2 > 1) {
+					return 2;
+				}
+			}
+		}
+		return 0;
 	}
 
 	private void findThreats(final int player, final int x, final int y, final GameStateModule state) {
@@ -220,7 +290,7 @@ public class minimax_zugzwang extends AIModule
 		// END vertical
 	}
 
-	private boolean isLegal(int x, int y) {
+	private boolean isLegal(final int x, final int y) {
 		return y >= 0 && y <= 5 && x >= 0 && x <= 6;
 	}
 
