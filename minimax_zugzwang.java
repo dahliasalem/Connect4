@@ -22,6 +22,7 @@ public class minimax_zugzwang extends AIModule
 	private int myID;
 	private int eID;
 	private int depth;
+	private int countdown;
 	private int width;
 	private int height;
 	private int lastX;
@@ -31,9 +32,9 @@ public class minimax_zugzwang extends AIModule
 	private boolean[] full;
 	private int[] heights;
 	private static final int BIGWIN = 100000;
-	private static final int ILLEGAL = -100000;
-	private static final int NOLOSS = 1000;
-	private static final int SUICIDE = -1000;
+	private static final int ILLEGAL = -1000000;
+	private static final int NOLOSS = 10000;
+	private static final int SUICIDE = -10000;
 	private static final int HORIZON = 100;
 	private static final int FLANKER = 200;
 	private static final int EHORIZON = -9;
@@ -98,23 +99,25 @@ public class minimax_zugzwang extends AIModule
 			}
 			System.out.print("\n");
 			// */
+			countdown = ++depth;
 		}
 		//printThreats(eThreats);
 		lastX = chosenMove;
 		lastY = heights[chosenMove];
 		eThreats[lastX][lastY] = 0;
 		heights[chosenMove]++;
-		depth = 0;
+		System.out.println("Depth: " + depth);
+		depth = countdown = 0;
 	}
 
-	private void evaluate(final GameStateModule state) {
+	private int[] evaluate(final GameStateModule state) {
 		int h = -1;
 		moves = new int[7];
 		for(int i = 0; i < 7; i++) {
 			h = heights[i];
 			if(h != 6) {
 				if(myThreats[i][h] == myID) {
-					moves[i] += BIGWIN; // if we can win no further calcs are necessary
+					moves[i] = Integer.MAX_VALUE; // if we can win no further calcs are necessary
 				}
 				else{
 					if(eThreats[i][h] == eID) {
@@ -148,24 +151,55 @@ public class minimax_zugzwang extends AIModule
 					}
 				}
 			}
-			else {
-				moves[i] += ILLEGAL;
+			// else {
+			// 	moves[i] += ILLEGAL;
+			// }
+		}
+
+		if(countdown-- > 0) {
+			System.out.print(" | " + countdown + " | ");
+			for(int i = 0; i < 7; i++) {
+				if(state.canMakeMove(i) && moves[i] != Integer.MAX_VALUE) {
+					heights[i]++;
+					state.makeMove(i);
+					int[] children = evaluate(state);
+					state.unMakeMove();
+					heights[i]--;
+					int min = Integer.MAX_VALUE;
+					for(int j = 0; j < 7; j++) {
+						if(children[j] < min) {
+							min = children[j];
+						}
+					}
+					moves[i] = min;
+				}
+				// else if(!state.canMakeMove(i)) {
+				// 	moves[i] = -Integer.MAX_VALUE;
+				// }
 			}
 		}
+
 		for(int i = 0; i < 7; i++) {
-			if(alternate) {
-				if(moves[i] > moves[chosenMove]) {
-					chosenMove = i;
+			if(state.canMakeMove(i)) {
+				if(alternate) {
+					if(moves[i] > moves[chosenMove]) {
+						chosenMove = i;
+					}
+					alternate = false;
 				}
-				alternate = false;
+				else {
+					if(moves[i] >= moves[chosenMove]) {
+						chosenMove = i;
+					}
+					alternate = true;
+				}
 			}
 			else {
-				if(moves[i] >= moves[chosenMove]) {
-					chosenMove = i;
-				}
-				alternate = true;
+				moves[i] = Integer.MAX_VALUE;
 			}
 		}
+
+		return moves;
 	}
 
 	private int checkHorizontal(final int x, final int y, final GameStateModule state) {

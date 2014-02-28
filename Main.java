@@ -119,7 +119,8 @@ public class Main
 		}
 		catch(Exception e)
 		{
-			System.err.println("Unknown Error");
+			System.err.println("Unknown Error: " + e.getMessage());
+			e.printStackTrace();
 			System.exit(5);
 		}
 
