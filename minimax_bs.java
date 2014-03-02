@@ -1,4 +1,13 @@
 import java.util.Random;
+/*
+*	This was my first try at minimax with a simple evaluation function.
+*	The primary difference between this and minimax_py is that this doesn't use
+*	gamestate copies, choosing instead to rely on the provided makeMove() and
+*	unmakeMove().
+*
+*	Another notable difference is that this counts up as it gets deeper in the
+*	tree while minimax_py counts down as it gets deeper.
+*/
 public class minimax_bs extends AIModule
 {
 	private final Random r = new Random(System.currentTimeMillis());
@@ -25,17 +34,6 @@ public class minimax_bs extends AIModule
 		depth = 0;
 		width = 7;
 		height = 6;
-		lastX = lastY = -1;
-		myThreats = new int[width][height];
-		eThreats = new int[width][height];
-		moves = new int[width];
-
-		for(int i = 0; i < width; i++) {
-			for(int j = 0; j < height; j++) {
-				myThreats[i][j] = 0;
-				eThreats[i][j] = 0;
-			}
-		}
 	}
 
 	public void getNextMove(final GameStateModule state) {
@@ -48,6 +46,7 @@ public class minimax_bs extends AIModule
 		depth = 0;
 	}
 
+	// The main recursive function in which chosenMove is assigned
 	private int evaluate(final GameStateModule state, final int child) {
 		depth++;
 		//if(myID == 0) {
@@ -64,6 +63,7 @@ public class minimax_bs extends AIModule
 		int e3s = 0;
 		int myCount = 0;
 		int eCount = 0;
+		// has someone won in this state?
 		if(state.isGameOver()) {
 			if(state.getWinner() == myID) {
 				//System.out.println("Player "+myID+" Depth: "+depth+" WIN");
@@ -77,6 +77,7 @@ public class minimax_bs extends AIModule
 			}
 		}
 		
+		// loop that counts horizontal potential wins
 		for(int i = 0; i < 4; i++) {
 			for(int j = 0; j < 6; j++) {
 				myCount = 0;
@@ -121,6 +122,7 @@ public class minimax_bs extends AIModule
 			}
 		}
 
+		// loop that counts positive slope diagonal potential wins
 		for(int i = 0; i < 4; i++) {
 			for(int j = 0; j < 3; j++) {
 				myCount = 0;
@@ -165,7 +167,7 @@ public class minimax_bs extends AIModule
 			}
 		}
 
-
+		// loop that counts negative slope diagonal potential wins
 		for(int i = 0; i < 4; i++) {
 			for(int j = 3; j < 6; j++) {
 				myCount = 0;
@@ -210,6 +212,7 @@ public class minimax_bs extends AIModule
 			}
 		}
 
+		// loop that counts potential vertical wins
 		for(int i = 0; i < 7; i++) {
 			int topPlayer = 0;
 			int count = 0;
@@ -257,6 +260,8 @@ public class minimax_bs extends AIModule
 			}
 		}
 
+		// if we haven't reached the iterative deepening cap and we haven't been
+		// told to terminate then recurse a level lower instead of evaluating
 		if(depth < cap && !terminate) {
 			int max = -Integer.MAX_VALUE;
 			int maxMove = -1;
@@ -265,17 +270,19 @@ public class minimax_bs extends AIModule
 			for(int i = 0; i < 7; i++) {
 				if(state.canMakeMove(i)) {
 					state.makeMove(i);
-					moves[i] = -evaluate(state, i);
+					moves[i] = -evaluate(state, i); // the recursive call
 					//myID = rememberID;
 					state.unMakeMove();
 				}
 			}
+			// which column evaluated best
 			for(int i = 0; i < 7; i++) {
 				if(moves[i] > max) {
 					max = moves[i];
 					maxMove = i;
 				}
 			}
+			// if we are back at level 1 then set chosenMove to the best column
 			if(depth == 1) {
 				chosenMove = maxMove;
 				System.out.print(cap);
@@ -301,9 +308,5 @@ public class minimax_bs extends AIModule
 		//System.out.println("OUT Depth:"+depth+" Player:"+myID+" Child:"+child);
 		depth--;
 		return (my2s*TWOFER + my3s*THREEFER);// - (e2s*TWOFER + e3s*THREEFER);
-	}
-
-	private boolean isLegal(final int x, final int y) {
-		return y >= 0 && y <= 5 && x >= 0 && x <= 6;
 	}
 }
