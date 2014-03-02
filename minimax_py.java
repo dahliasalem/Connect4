@@ -1,81 +1,76 @@
 import java.util.Random;
-public class minimax_bs extends AIModule
+import java.util.HashMap;
+import java.util.ArrayList;
+
+public class minimax_py extends AIModule
 {
 	private final Random r = new Random(System.currentTimeMillis());
-	private int[] moves;
-	private int myID;
-	private int eID;
-	private int depth;
-	private int cap;
-	private int countdown;
-	private int width;
-	private int height;
-	private int lastX;
-	private int lastY;
-	private int[][] myThreats;
-	private int[][] eThreats;
-	private boolean[] full;
-	private int[] heights;
 	private static final int THREEFER = 100;
 	private static final int TWOFER = 1;
-	private static final int DEPTHLIMIT = 5;
-
-	public minimax_bs() {
-		myID = eID = 0;
-		depth = 0;
-		width = 7;
-		height = 6;
-		lastX = lastY = -1;
-		myThreats = new int[width][height];
-		eThreats = new int[width][height];
-		moves = new int[width];
-
-		for(int i = 0; i < width; i++) {
-			for(int j = 0; j < height; j++) {
-				myThreats[i][j] = 0;
-				eThreats[i][j] = 0;
-			}
-		}
+	
+	public minimax_py() {
+		
 	}
 
 	public void getNextMove(final GameStateModule state) {
-		chosenMove = 0; //r.nextInt(7);
-		cap = 1;
-		while(!terminate) {
-			evaluate(state, -1);
-			cap++;
+		int myID = state.getActivePlayer();
+		int eID = myID == 1 ? 2 : 1;
+		int depth = 8;
+		int[] legalMoves = new int[7];
+		for(int i = 0; i < 7; i++) {
+			if(state.canMakeMove(i)) {
+				GameStateModule copy = state.copy();
+				copy.makeMove(i);
+				legalMoves[i] = evaluate(depth, copy, eID);
+			}
+			else {
+				legalMoves[i] = Integer.MIN_VALUE;
+			}
 		}
-		depth = 0;
+		int max = -Integer.MAX_VALUE;
+		int best = -1;
+		for(int i = 0; i < 7; i++) {
+			System.out.print("["+legalMoves[i]+"]");
+			if(legalMoves[i] != Integer.MIN_VALUE) {
+				if(legalMoves[i] > max) {
+					max = legalMoves[i];
+					best = i;
+				}
+			}
+		}
+		chosenMove = best;
 	}
 
-	private int evaluate(final GameStateModule state, final int child) {
-		depth++;
-		//if(myID == 0) {
-			myID = state.getActivePlayer();
-		//}
-		// else {
-		// 	myID = myID == 1 ? 2 : 1;
-		// }
-		//System.out.println("IN Depth:"+depth+" Player:"+myID+" Child:"+child);
-		eID = myID == 1 ? 2 : 1;
+	private int evaluate(final int depth, final GameStateModule state, final int myID) {
+		
+		int eID = myID == 1 ? 2 : 1;
+		ArrayList<GameStateModule> legalMoves = new ArrayList<GameStateModule>();
+		for(int i = 0; i < 7; i++) {
+			if(state.canMakeMove(i)) {
+				GameStateModule temp = state.copy();
+				temp.makeMove(i);
+				legalMoves.add(temp);
+			}
+		}
+		if(depth == 0 || state.getCoins() == 42 || terminate) {
+			return value(myID, state);
+		}
+		
+		int max = -Integer.MAX_VALUE;
+		for(int i = 0; i < legalMoves.size(); i++) {
+			max = Math.max(max, -evaluate(depth-1, legalMoves.get(i), eID));
+		}
+		return max;
+	}
+
+	private int value(final int myID, final GameStateModule state) {
+		int eID = myID == 1 ? 2 : 1;
 		int my2s = 0;
 		int my3s = 0;
 		int e2s = 0;
 		int e3s = 0;
 		int myCount = 0;
 		int eCount = 0;
-		if(state.isGameOver()) {
-			if(state.getWinner() == myID) {
-				//System.out.println("Player "+myID+" Depth: "+depth+" WIN");
-				depth--;
-				return Integer.MAX_VALUE;
-			}
-			else if(state.getWinner() == eID) {
-				//System.out.println("Player "+myID+" Depth: "+depth+" LOSE");
-				depth--;
-				return -Integer.MAX_VALUE;
-			}
-		}
 		
 		for(int i = 0; i < 4; i++) {
 			for(int j = 0; j < 6; j++) {
@@ -100,7 +95,7 @@ public class minimax_bs extends AIModule
 						e3s++;
 					}
 					else if(eCount == 4) {
-						depth--;
+					//System.out.print("Loss ");
 						return -Integer.MAX_VALUE;
 					}
 				}
@@ -114,7 +109,7 @@ public class minimax_bs extends AIModule
 						my3s++;
 					}
 					else if(myCount == 4) {
-						depth--;
+					//System.out.print("Win ");
 						return Integer.MAX_VALUE;
 					}
 				}
@@ -144,7 +139,7 @@ public class minimax_bs extends AIModule
 						e3s++;
 					}
 					else if(eCount == 4) {
-						depth--;
+					//System.out.print("Loss ");
 						return -Integer.MAX_VALUE;
 					}
 				}
@@ -158,7 +153,7 @@ public class minimax_bs extends AIModule
 						my3s++;
 					}
 					else if(myCount == 4) {
-						depth--;
+					//System.out.print("Win ");
 						return Integer.MAX_VALUE;
 					}
 				}
@@ -189,7 +184,7 @@ public class minimax_bs extends AIModule
 						e3s++;
 					}
 					else if(eCount == 4) {
-						depth--;
+					//System.out.print("Loss ");
 						return -Integer.MAX_VALUE;
 					}
 				}
@@ -203,7 +198,7 @@ public class minimax_bs extends AIModule
 						my3s++;
 					}
 					else if(myCount == 4) {
-						depth--;
+					//System.out.print("Win ");
 						return Integer.MAX_VALUE;
 					}
 				}
@@ -247,60 +242,18 @@ public class minimax_bs extends AIModule
 			}
 			else if(count == 4) {
 				if(topPlayer == myID) {
-					depth--;
+					//System.out.print("Win ");
 					return Integer.MAX_VALUE;
 				}
 				else {
-					depth--;
+					//System.out.print("Loss ");
 					return -Integer.MAX_VALUE;
 				}
 			}
 		}
-
-		if(depth < cap && !terminate) {
-			int max = -Integer.MAX_VALUE;
-			int maxMove = -1;
-			//int rememberID = myID;
-			moves = new int[7];
-			for(int i = 0; i < 7; i++) {
-				if(state.canMakeMove(i)) {
-					state.makeMove(i);
-					moves[i] = -evaluate(state, i);
-					//myID = rememberID;
-					state.unMakeMove();
-				}
-			}
-			for(int i = 0; i < 7; i++) {
-				if(moves[i] > max) {
-					max = moves[i];
-					maxMove = i;
-				}
-			}
-			if(depth == 1) {
-				chosenMove = maxMove;
-				System.out.print(cap);
-				for(int i = 0; i < 7; i++) {
-					System.out.print("["+moves[i]+"]");
-				}
-				System.out.print("\n");
-			}
-			//System.out.println("Player "+myID+" Depth: "+depth+" minimum");
-			depth--;
-			//System.out.println(moves[minMove]);
-			return moves[maxMove];
-		}
-
-		// for(int i = 0; i < 7; i++) {
-		// 	System.out.print("["+state.getHeightAt(i)+"]");
-		// }
-		// System.out.println(
-		// 	"Player: " + myID + " Depth: " + depth + " MyTwos:" + my2s + " MyThrees:" + my3s + " eTwos:" + e2s + " eThrees:" + e3s
-		// );
-		//System.out.println("Player "+myID+" Depth: "+depth+" evaluate");
-
-		//System.out.println("OUT Depth:"+depth+" Player:"+myID+" Child:"+child);
-		depth--;
-		return (my2s*TWOFER + my3s*THREEFER);// - (e2s*TWOFER + e3s*THREEFER);
+		int ret = my2s*TWOFER + my3s*THREEFER;
+		//System.out.print(ret+" ");
+		return ret;
 	}
 
 	private boolean isLegal(final int x, final int y) {
