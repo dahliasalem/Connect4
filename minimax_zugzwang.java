@@ -91,7 +91,7 @@ public class minimax_zugzwang extends AIModule
 		}
 		findThreats(eID, enemyMove, h, state);
 		findThreats(myID, lastX, lastY, state);
-		while(!terminate) {
+		//while(!terminate) {
 			evaluate(state);
 			/*
 			for(int i = 0; i < 7; i++) {
@@ -99,8 +99,8 @@ public class minimax_zugzwang extends AIModule
 			}
 			System.out.print("\n");
 			// */
-			countdown = ++depth;
-		}
+			//countdown = ++depth;
+		//}
 		//printThreats(eThreats);
 		lastX = chosenMove;
 		lastY = heights[chosenMove];
@@ -156,8 +156,9 @@ public class minimax_zugzwang extends AIModule
 			// }
 		}
 
+		/*
 		if(countdown-- > 0) {
-			System.out.print(" | " + countdown + " | ");
+			//System.out.print(" | " + countdown + " | ");
 			for(int i = 0; i < 7; i++) {
 				if(state.canMakeMove(i) && moves[i] != Integer.MAX_VALUE) {
 					heights[i]++;
@@ -177,7 +178,7 @@ public class minimax_zugzwang extends AIModule
 				// 	moves[i] = -Integer.MAX_VALUE;
 				// }
 			}
-		}
+		}*/
 
 		for(int i = 0; i < 7; i++) {
 			if(state.canMakeMove(i)) {
